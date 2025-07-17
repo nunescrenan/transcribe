@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>RNC Transcribe</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: radial-gradient(circle at center, #1c1c1c 0%, #0a0a0a 100%);
+    }
+    .glow-orange {
+      color: #ff8000;
+      text-shadow: 0 0 10px #ff8000aa, 0 0 20px #ff8000aa;
+    }
+    .terminal-output {
+      background-color: #111;
+      color: #0f0;
+      font-family: monospace;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .glass {
+      backdrop-filter: blur(10px);
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+  </style>
+</head>
+<body class="flex items-center justify-center min-h-screen text-white">
+
+  <div class="glass p-8 rounded-xl shadow-lg w-full max-w-xl border border-orange-500">
+    <h1 class="text-3xl font-bold mb-6 glow-orange text-center tracking-widest">RNC Transcribe</h1>
+
+    <form id="form" enctype="multipart/form-data" class="space-y-4">
+      <label class="block text-gray-300 text-sm mb-1">Selecione o áudio (.mp3 ou .wav)</label>
+      <input type="file" name="audio" accept=".mp3,.wav" required
+             class="w-full p-2 rounded bg-gray-800 border border-gray-600 text-white file:bg-orange-600 file:text-white file:border-none file:px-4 file:py-2 file:rounded hover:file:bg-orange-700"/>
+
+      <button type="submit"
+              class="w-full bg-orange-600 text-white font-semibold py-2 px-4 rounded hover:bg-orange-700 transition">
+        🚀 Enviar e Processar
+      </button>
+    </form>
+
+    <div id="status" class="mt-6 terminal-output text-sm"></div>
+    <div class="flex justify-center mt-3 text-sm">
+        <span class="">Made with 💖 by Renan to Kamily.</span>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('form');
+    const statusDiv = document.getElementById('status');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      statusDiv.innerHTML = "🔼 Enviando...\n";
+
+      const formData = new FormData(form);
+
+      const res = await fetch('/get', {
+        method: 'POST',
+        body: formData
+      });
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const texto = decoder.decode(value);
+        statusDiv.textContent += texto;
+
+        if (texto.includes('[DOWNLOAD]')) {
+          const btn = document.createElement('a');
+          btn.href = '/laudo-final.txt';
+          btn.download = 'laudo-final.txt';
+          btn.className = 'mt-4 block bg-green-600 text-white px-4 py-2 rounded text-center hover:bg-green-700';
+          btn.textContent = '📥 Baixar Laudo Final';
+          statusDiv.appendChild(btn);
+        }
+
+        statusDiv.scrollTop = statusDiv.scrollHeight;
+      }
+    });
+  </script>
+</body>
+</html>
